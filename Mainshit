@@ -1,0 +1,50 @@
+name: Build AutoFinder APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Clonar repositorio
+      - uses: actions/checkout@v3
+
+      # 2️⃣ Leer URL de descarga desde el archivo download_link.txt
+      - name: Read download URL
+        id: get_url
+        run: |
+          URL=$(cat download_link.txt)
+          echo "DOWNLOAD_URL=$URL" >> $GITHUB_ENV
+
+      # 3️⃣ Descargar el ZIP del proyecto
+      - name: Download project ZIP from Drive
+        run: wget -O autofinderapp.zip "$DOWNLOAD_URL"
+
+      # 4️⃣ Descomprimir el proyecto
+      - name: Unzip project
+        run: unzip autofinderapp.zip -d .
+
+      # 5️⃣ Instalar Flutter
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable'
+
+      # 6️⃣ Instalar dependencias
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 7️⃣ Construir APK release
+      - name: Build APK
+        run: flutter build apk --release
+
+      # 8️⃣ Subir APK como artifact
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: autofinder-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
